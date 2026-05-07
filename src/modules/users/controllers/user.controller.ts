@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
 import { bodyToUser, UserSignUpRequest } from "../dtos/user.dto.js";
-import { userSignUp } from "../services/user.service.js";
+import { listUserReviews, userSignUp } from "../services/user.service.js";
 
 export const handleUserSignUp = async (
   req: Request,
@@ -19,5 +19,22 @@ export const handleUserSignUp = async (
     res
       .status(StatusCodes.BAD_REQUEST)
       .json({ error: (error as Error).message });
+  }
+};
+
+export const handleListUserReviews = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const userId = parseInt(req.params.userId as string, 10);
+    const cursor =
+      typeof req.query.cursor === "string" ? parseInt(req.query.cursor, 10) : 0;
+
+    const response = await listUserReviews(userId, cursor);
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
   }
 };

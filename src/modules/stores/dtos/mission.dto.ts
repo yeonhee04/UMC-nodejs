@@ -21,3 +21,12 @@ export const responseFromMission = (insertId: number) => {
     message: "가게에 미션이 성공적으로 추가되었습니다!",
   };
 };
+
+export const responseFromMissions = (missions: any[]) => {
+  return {
+    data: missions,
+    pagination: {
+      cursor: missions.length > 0 ? missions[missions.length - 1].id : null,
+    },
+  };
+};

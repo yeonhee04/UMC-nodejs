@@ -1,8 +1,12 @@
 import {
   MissionCreateRequest,
   responseFromMission,
+  responseFromMissions,
 } from "../dtos/mission.dto.js";
-import { addMission } from "../repositories/mission.repository.js";
+import {
+  addMission,
+  getStoreMissions,
+} from "../repositories/mission.repository.js";
 import { getStoreById } from "../repositories/review.repository.js";
 
 export const createMission = async (
@@ -21,4 +25,9 @@ export const createMission = async (
 
   // 3. 성공 응답 포장
   return responseFromMission(insertId);
+};
+
+export const listStoreMissions = async (storeId: number, cursor: number) => {
+  const missions = await getStoreMissions(storeId, cursor);
+  return responseFromMissions(missions);
 };

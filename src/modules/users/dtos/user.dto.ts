@@ -25,19 +25,21 @@ export const bodyToUser = (body: UserSignUpRequest) => {
   };
 };
 
-export const responseFromUser = ({
-  user,
-  preferences,
-}: {
-  user: any;
-  preferences: any[];
-}) => {
-  // 선호 카테고리 객체 배열에서 카테고리 이름만 추출
-  const preferCategory = preferences.map((preference) => preference.name);
+export const responseFromUser = (data: { user: any; preferences: any[] }) => {
+  const preferCategory = data.preferences.map((p) => p.foodCategory.name);
 
   return {
-    email: user.email,
-    name: user.name,
-    preferCategory,
+    email: data.user.email,
+    name: data.user.name,
+    preferCategory: preferCategory,
+  };
+};
+
+export const responseFromUserReviews = (reviews: any[]) => {
+  return {
+    data: reviews,
+    pagination: {
+      cursor: reviews.length > 0 ? reviews[reviews.length - 1].id : null,
+    },
   };
 };

@@ -1,7 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
 import { bodyToMission } from "../dtos/mission.dto.js";
-import { createMission } from "../services/mission.service.js";
+import {
+  createMission,
+  listStoreMissions,
+} from "../services/mission.service.js";
 
 export const handleCreateMission = async (
   req: Request,
@@ -24,5 +27,22 @@ export const handleCreateMission = async (
     res
       .status(StatusCodes.BAD_REQUEST)
       .json({ error: (error as Error).message });
+  }
+};
+
+export const handleListStoreMissions = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const storeId = parseInt(req.params.storeId as string, 10);
+    const cursor =
+      typeof req.query.cursor === "string" ? parseInt(req.query.cursor, 10) : 0;
+
+    const response = await listStoreMissions(storeId, cursor);
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
   }
 };

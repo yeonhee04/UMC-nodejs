@@ -1,9 +1,14 @@
 import bcrypt from "bcrypt";
-import { UserSignUpRequest, responseFromUser } from "../dtos/user.dto.js";
+import {
+  UserSignUpRequest,
+  responseFromUser,
+  responseFromUserReviews,
+} from "../dtos/user.dto.js";
 import {
   addUser,
   getUser,
   getUserPreferencesByUserId,
+  getUserReviews,
   setPreference,
 } from "../repositories/user.repository.js";
 
@@ -33,4 +38,9 @@ export const userSignUp = async (data: UserSignUpRequest) => {
   const preferences = await getUserPreferencesByUserId(joinUserId);
 
   return responseFromUser({ user, preferences });
+};
+
+export const listUserReviews = async (userId: number, cursor: number) => {
+  const reviews = await getUserReviews(userId, cursor);
+  return responseFromUserReviews(reviews);
 };

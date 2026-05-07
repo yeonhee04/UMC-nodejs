@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
 import { bodyToReview } from "../dtos/review.dto.js";
-import { createReview } from "../services/review.service.js";
+import { createReview, listStoreReviews } from "../services/review.service.js";
 
 export const handleCreateReview = async (
   req: Request,
@@ -24,5 +24,26 @@ export const handleCreateReview = async (
     res
       .status(StatusCodes.BAD_REQUEST)
       .json({ error: (error as Error).message });
+  }
+};
+
+export const handleListStoreReviews = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    // 1. 주소에서 가게 ID 뽑기
+    const storeId = parseInt(req.params.storeId as string, 10);
+
+    // 2. 주소 뒤의 ?cursor= 값 뽑기 (값이 없으면 0으로 시작)
+    const cursor =
+      typeof req.query.cursor === "string" ? parseInt(req.query.cursor, 10) : 0;
+
+    // 3. 서비스 호출 및 응답
+    const reviews = await listStoreReviews(storeId, cursor);
+    res.status(200).json(reviews);
+  } catch (err) {
+    next(err);
   }
 };
