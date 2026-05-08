@@ -1,8 +1,8 @@
 import bcrypt from "bcrypt";
 import {
   UserSignUpRequest,
-  responseFromUser,
-  responseFromUserReviews,
+  UserSignUpResponse,
+  UserReviewsResponse,
 } from "../dtos/user.dto.js";
 import {
   addUser,
@@ -11,8 +11,12 @@ import {
   getUserReviews,
   setPreference,
 } from "../repositories/user.repository.js";
+import { DuplicateUserEmailError } from "../../../common/errors/error.js";
 
-export const userSignUp = async (data: UserSignUpRequest) => {
+// 1. 회원가입 서비스 함수
+export const userSignUp = async (
+  data: UserSignUpRequest,
+): Promise<UserSignUpResponse> => {
   const hashedPassword = await bcrypt.hash(data.password, 10);
 
   const joinUserId = await addUser({
@@ -27,7 +31,9 @@ export const userSignUp = async (data: UserSignUpRequest) => {
   });
 
   if (joinUserId === null) {
-    throw new Error("이미 존재하는 이메일입니다.");
+    throw new DuplicateUserEmailError("이미 존재하는 이메일입니다.", {
+      email: data.email,
+    });
   }
 
   for (const preference of data.preferences) {
@@ -37,10 +43,26 @@ export const userSignUp = async (data: UserSignUpRequest) => {
   const user = await getUser(joinUserId);
   const preferences = await getUserPreferencesByUserId(joinUserId);
 
-  return responseFromUser({ user, preferences });
+  const preferCategory = preferences.map((p: any) => p.foodCategory.name);
+
+  return <UserSignUpResponse>{
+    email: user.email,
+    name: user.name,
+    preferCategory: preferCategory,
+  };
 };
 
-export const listUserReviews = async (userId: number, cursor: number) => {
-  const reviews = await getUserReviews(userId, cursor);
-  return responseFromUserReviews(reviews);
+// 2. 내 리뷰 목록 조회 서비스 함수
+export const listUserReviews = async (
+  userId: number,
+  cursor: number,
+): Promise<UserReviewsResponse> => {
+  const reviews = (await getUserReviews(userId, cursor)) || [];
+
+  return <UserReviewsResponse>{
+    data: reviews,
+    pagination: {
+      cursor: reviews.length > 0 ? reviews[reviews.length - 1]!.id : null,
+    },
+  };
 };

@@ -1,29 +1,21 @@
-// 성공 시 클라이언트에게 보낼 응답 형태
-export const responseFromUserMission = (insertId: number) => {
-  return {
-    userMissionId: insertId,
-    message: "미션 도전을 시작했습니다!",
-  };
-};
+// 1. 미션 도전 시작 응답 DTO
+export interface UserMissionChallengeResponse {
+  userMissionId: number;
+  message: string;
+}
 
-export const responseFromUserMissions = (userMissions: any[]) => {
-  return {
-    data: userMissions,
-    pagination: {
-      cursor:
-        userMissions.length > 0
-          ? userMissions[userMissions.length - 1].id
-          : null,
-    },
+// 2. 내가 진행 중인 미션 목록 조회 응답 DTO
+export interface UserMissionListResponse {
+  data: any[];
+  pagination: {
+    cursor: number | null;
   };
-};
+}
 
-// 상태 변경 완료 응답 DTO
-export const responseFromUpdateUserMission = (updatedMission: any) => {
-  return {
-    userMissionId: updatedMission.id,
-    userId: updatedMission.userId,
-    missionId: updatedMission.missionId,
-    status: updatedMission.status,
-  };
-};
+// 3. 미션 상태 변경(완료 등) 응답 DTO
+export interface UserMissionUpdateResponse {
+  userMissionId: number;
+  userId: number;
+  missionId: number;
+  status: string;
+}

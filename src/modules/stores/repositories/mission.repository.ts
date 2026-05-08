@@ -1,7 +1,7 @@
 import { prisma } from "../../../db.config.js";
 import { MissionCreateRequest } from "../dtos/mission.dto.js";
 
-// 미션을 DB에 추가하는 함수
+// 1. 미션을 DB에 추가하는 함수
 export const addMission = async (
   storeId: number,
   data: MissionCreateRequest,
@@ -18,7 +18,7 @@ export const addMission = async (
   return created.id;
 };
 
-// 특정 가게의 미션 목록을 5개씩 가져오는 함수
+// 2. 특정 가게의 미션 목록을 5개씩 가져오는 함수
 export const getStoreMissions = async (storeId: number, cursor: number) => {
   const missions = await prisma.mission.findMany({
     select: {
@@ -28,13 +28,13 @@ export const getStoreMissions = async (storeId: number, cursor: number) => {
       missionSpec: true,
       store: {
         select: {
-          name: true, // 미션이 걸려있는 가게 이름도 보여주면 좋겠죠?
+          name: true,
         },
       },
     },
     where: {
       storeId: storeId,
-      id: { gt: cursor }, // 책갈피보다 큰 ID만 가져오기
+      id: { gt: cursor },
     },
     orderBy: { id: "asc" },
     take: 5,

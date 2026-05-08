@@ -1,34 +1,48 @@
 import {
   ReviewCreateRequest,
-  responseFromReview,
-  responseFromReviews,
+  ReviewResponse,
+  ReviewListResponse,
 } from "../dtos/review.dto.js";
 import {
-  getStoreById,
   addReview,
   getAllStoreReviews,
 } from "../repositories/review.repository.js";
+import { getStoreById } from "../repositories/store.repository.js";
+
+import { StoreNotFoundError } from "../../../common/errors/error.js";
 
 export const createReview = async (
   storeId: number,
   data: ReviewCreateRequest,
-) => {
+): Promise<ReviewResponse> => {
   // 1. 리뷰를 남길 가게가 존재하는지 검증
   const store = await getStoreById(storeId);
 
   if (!store) {
-    // 가게가 없으면 여기서 로직을 멈추고 에러 처리
-    throw new Error("요청하신 가게가 존재하지 않습니다.");
+    throw new StoreNotFoundError("요청하신 가게가 존재하지 않습니다.", {
+      storeId,
+    });
   }
 
   // 2. 검증을 통과했다면 정상적으로 리뷰를 DB에 추가
   const insertId = await addReview(storeId, data);
 
-  // 3. 성공 응답 생성
-  return responseFromReview(insertId);
+  return <ReviewResponse>{
+    reviewId: insertId,
+    message: "리뷰가 성공적으로 작성되었습니다!",
+  };
 };
 
-export const listStoreReviews = async (storeId: number, cursor: number) => {
-  const reviews = await getAllStoreReviews(storeId, cursor);
-  return responseFromReviews(reviews);
+export const listStoreReviews = async (
+  storeId: number,
+  cursor: number,
+): Promise<ReviewListResponse> => {
+  const reviews = (await getAllStoreReviews(storeId, cursor)) || [];
+
+  return <ReviewListResponse>{
+    data: reviews,
+    pagination: {
+      cursor: reviews.length > 0 ? reviews[reviews.length - 1]!.id : null,
+    },
+  };
 };

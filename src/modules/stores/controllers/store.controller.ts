@@ -1,24 +1,19 @@
-import { Request, Response, NextFunction } from "express";
-import { StatusCodes } from "http-status-codes";
-import { bodyToStore } from "../dtos/store.dto.js";
+import { Body, Controller, Path, Post, Route, Tags } from "tsoa";
+import { ApiResponse, success } from "../../../common/responses/response.js";
 import { createStore } from "../services/store.service.js";
+import { StoreCreateRequest, StoreResponse } from "../dtos/store.dto.js";
 
-export const handleCreateStore = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const regionId = parseInt(req.params.regionId as string, 10);
+@Route("regions") // 기본 API 경로 (/regions)
+@Tags("Stores") // Swagger 문서 그룹핑
+export class StoreController extends Controller {
+  // 1. 특정 지역에 가게 추가 API
+  @Post("{regionId}/stores") // 세부 경로: /regions/{regionId}/stores
+  public async handleCreateStore(
+    @Path() regionId: number,
+    @Body() body: StoreCreateRequest,
+  ): Promise<ApiResponse<StoreResponse>> {
+    const result = await createStore(regionId, body);
 
-    const storeData = bodyToStore(req.body);
-
-    const result = await createStore(regionId, storeData);
-
-    res.status(StatusCodes.OK).json({ result });
-  } catch (error) {
-    res
-      .status(StatusCodes.BAD_REQUEST)
-      .json({ error: (error as Error).message });
+    return success(result);
   }
-};
+}

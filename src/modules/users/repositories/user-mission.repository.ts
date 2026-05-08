@@ -9,7 +9,7 @@ export const getMissionById = async (missionId: number) => {
   return mission;
 };
 
-// 2. 유저가 이미 해당 미션을 '진행중'인지 확인
+// 2. 유저가 해당 미션에 이미 도전 중인지 확인
 export const getUserMission = async (userId: number, missionId: number) => {
   const userMission = await prisma.userMission.findFirst({
     where: {
@@ -22,7 +22,7 @@ export const getUserMission = async (userId: number, missionId: number) => {
   return userMission;
 };
 
-// 3. 미션 도전 기록을 DB에 추가
+// 3. 유저가 미션에 도전하는 기록 추가
 export const addUserMission = async (userId: number, missionId: number) => {
   const created = await prisma.userMission.create({
     data: {
@@ -35,7 +35,7 @@ export const addUserMission = async (userId: number, missionId: number) => {
   return created.id;
 };
 
-// 유저가 진행 중인 미션 목록을 가져오는 함수
+// 4. 유저가 진행 중인 미션 목록을 페이징 처리하여 조회
 export const getUserMissions = async (userId: number, cursor: number) => {
   const userMissions = await prisma.userMission.findMany({
     select: {
@@ -49,7 +49,7 @@ export const getUserMissions = async (userId: number, cursor: number) => {
           missionSpec: true,
           store: {
             select: {
-              name: true, // 미션을 수행할 가게 이름
+              name: true,
             },
           },
         },
@@ -65,4 +65,30 @@ export const getUserMissions = async (userId: number, cursor: number) => {
   });
 
   return userMissions;
+};
+
+// 5. 유저가 진행 중인 미션을 '진행완료'로 상태 변경
+export const updateMissionToComplete = async (
+  userId: number,
+  missionId: number,
+) => {
+  // (1) 유저가 현재 '진행중'인 해당 미션이 있는지 찾기
+  const userMission = await prisma.userMission.findFirst({
+    where: {
+      userId: userId,
+      missionId: missionId,
+      status: "진행중",
+    },
+  });
+
+  // (2) 없다면 null 반환
+  if (!userMission) {
+    return null;
+  }
+
+  // (3) 찾았다면 상태를 '진행완료'로 업데이트하고 결과 반환
+  return await prisma.userMission.update({
+    where: { id: userMission.id },
+    data: { status: "진행완료" },
+  });
 };

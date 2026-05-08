@@ -1,78 +1,90 @@
 import { prisma } from "../../../db.config.js";
 import {
-  responseFromUpdateUserMission,
-  responseFromUserMission,
-  responseFromUserMissions,
+  UserMissionChallengeResponse,
+  UserMissionListResponse,
+  UserMissionUpdateResponse,
 } from "../dtos/user-mission.dto.js";
 import {
   getMissionById,
   getUserMission,
   addUserMission,
   getUserMissions,
+  updateMissionToComplete,
 } from "../repositories/user-mission.repository.js";
 
-export const challengeMission = async (userId: number, missionId: number) => {
-  // 1. 미션 존재 여부 검증
-  const mission = await getMissionById(missionId);
-  if (!mission) {
-    throw new Error("요청하신 미션이 존재하지 않습니다.");
-  }
+import {
+  MissionNotFoundError,
+  MissionAlreadyChallengedError,
+  MissionNotChallengingError,
+} from "../../../common/errors/error.js";
 
-  // 2. 이미 도전 중인 미션인지 검증
-  const existingMission = await getUserMission(userId, missionId);
-  if (existingMission) {
-    throw new Error("이미 도전 중인 미션입니다.");
-  }
-
-  // 3. 검증 통과 시 미션 도전 추가
-  const insertId = await addUserMission(userId, missionId);
-
-  return responseFromUserMission(insertId);
-};
-
-export const listUserMissions = async (userId: number, cursor: number) => {
-  const userMissions = await getUserMissions(userId, cursor);
-  return responseFromUserMissions(userMissions);
-};
-
-// 특정 유저가 진행 중인 미션을 '진행완료' 상태로 변경하는 함수
-export const completeUserMission = async (
+// 1. 유저가 미션에 도전하는 서비스
+export const challengeMission = async (
   userId: number,
   missionId: number,
-) => {
-  // 1. 유저가 현재 '진행중'인 해당 미션이 있는지 먼저 찾음
-  const userMission = await prisma.userMission.findFirst({
-    where: {
-      userId: userId,
-      missionId: missionId,
-      status: "진행중",
-    },
-  });
-
-  // 2. 만약 없다면 null을 반환해서 Service에서 에러를 처리
-  if (!userMission) {
-    return null;
+): Promise<UserMissionChallengeResponse> => {
+  // (1) 미션 존재 여부 검증
+  const mission = await getMissionById(missionId);
+  if (!mission) {
+    throw new MissionNotFoundError("요청하신 미션이 존재하지 않습니다.", {
+      missionId,
+    });
   }
 
-  // 3. 찾았다면, 해당 데이터의 고유 id를 이용해 상태를 업데이트
-  const updatedMission = await prisma.userMission.update({
-    where: { id: userMission.id },
-    data: { status: "진행완료" },
-  });
+  // (2) 이미 도전 중인 미션인지 검증
+  const existingMission = await getUserMission(userId, missionId);
+  if (existingMission) {
+    throw new MissionAlreadyChallengedError("이미 도전 중인 미션입니다.", {
+      userId,
+      missionId,
+    });
+  }
 
-  return updatedMission;
+  // (3) 검증 통과 시 미션 도전 추가
+  const insertId = await addUserMission(userId, missionId);
+
+  return <UserMissionChallengeResponse>{
+    userMissionId: insertId,
+    message: "미션 도전을 시작했습니다!",
+  };
 };
 
-// 미션 상태를 '진행완료'로 바꾸는 비즈니스 로직
+// 2. 유저가 진행 중인 미션 목록을 조회하는 서비스
+export const listUserMissions = async (
+  userId: number,
+  cursor: number,
+): Promise<UserMissionListResponse> => {
+  const userMissions = (await getUserMissions(userId, cursor)) || [];
+
+  return <UserMissionListResponse>{
+    data: userMissions,
+    pagination: {
+      cursor:
+        userMissions.length > 0
+          ? userMissions[userMissions.length - 1]!.id
+          : null,
+    },
+  };
+};
+
+// 3. 유저가 진행 중인 미션을 '진행완료'로 상태 변경하는 서비스
 export const changeMissionToComplete = async (
   userId: number,
   missionId: number,
-) => {
-  const updatedMission = await completeUserMission(userId, missionId);
+): Promise<UserMissionUpdateResponse> => {
+  const updatedMission = await updateMissionToComplete(userId, missionId);
 
   if (!updatedMission) {
-    throw new Error("해당 미션을 진행 중이지 않거나, 이미 완료된 미션입니다.");
+    throw new MissionNotChallengingError(
+      "해당 미션을 진행 중이지 않거나, 이미 완료된 미션입니다.",
+      { userId, missionId },
+    );
   }
 
-  return responseFromUpdateUserMission(updatedMission);
+  return <UserMissionUpdateResponse>{
+    userMissionId: updatedMission.id,
+    userId: updatedMission.userId,
+    missionId: updatedMission.missionId,
+    status: updatedMission.status,
+  };
 };

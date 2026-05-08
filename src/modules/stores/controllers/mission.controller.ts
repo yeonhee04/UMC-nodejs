@@ -1,48 +1,39 @@
-import { Request, Response, NextFunction } from "express";
-import { StatusCodes } from "http-status-codes";
-import { bodyToMission } from "../dtos/mission.dto.js";
+import { Body, Controller, Get, Path, Post, Query, Route, Tags } from "tsoa";
+import { ApiResponse, success } from "../../../common/responses/response.js";
 import {
   createMission,
   listStoreMissions,
 } from "../services/mission.service.js";
 
-export const handleCreateMission = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    // 1. 주소창에서 storeId 추출
-    const storeId = parseInt(req.params.storeId as string, 10);
+import {
+  MissionCreateRequest,
+  MissionResponse,
+  MissionListResponse,
+} from "../dtos/mission.dto.js";
 
-    // 2. Body 데이터 다듬기
-    const missionData = bodyToMission(req.body);
+@Route("stores") // 기본 API 경로 (/stores)
+@Tags("Missions") // Swagger 문서 그룹핑
+export class MissionController extends Controller {
+  // 1. 특정 가게에 미션 추가 API
+  @Post("{storeId}/missions") // 세부 경로 (/stores/1/missions)
+  public async handleCreateMission(
+    @Path() storeId: number,
+    @Body() body: MissionCreateRequest,
+  ): Promise<ApiResponse<MissionResponse>> {
+    const result = await createMission(storeId, body);
 
-    // 3. 서비스 로직 호출
-    const result = await createMission(storeId, missionData);
-
-    // 4. 성공 응답
-    res.status(StatusCodes.OK).json({ result });
-  } catch (error) {
-    res
-      .status(StatusCodes.BAD_REQUEST)
-      .json({ error: (error as Error).message });
+    return success(result);
   }
-};
 
-export const handleListStoreMissions = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const storeId = parseInt(req.params.storeId as string, 10);
-    const cursor =
-      typeof req.query.cursor === "string" ? parseInt(req.query.cursor, 10) : 0;
+  // 2. 특정 가게의 미션 목록 조회 API
+  @Get("{storeId}/missions")
+  public async handleListStoreMissions(
+    @Path() storeId: number,
+    @Query() cursor?: number,
+  ): Promise<ApiResponse<MissionListResponse>> {
+    const actualCursor = cursor || 0;
+    const response = await listStoreMissions(storeId, actualCursor);
 
-    const response = await listStoreMissions(storeId, cursor);
-    res.status(200).json(response);
-  } catch (err) {
-    next(err);
+    return success(response);
   }
-};
+}

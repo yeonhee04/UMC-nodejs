@@ -1,49 +1,36 @@
-import { Request, Response, NextFunction } from "express";
-import { StatusCodes } from "http-status-codes";
-import { bodyToReview } from "../dtos/review.dto.js";
+import { Body, Controller, Get, Path, Post, Query, Route, Tags } from "tsoa";
+import { ApiResponse, success } from "../../../common/responses/response.js";
 import { createReview, listStoreReviews } from "../services/review.service.js";
+import {
+  ReviewCreateRequest,
+  ReviewResponse,
+  ReviewListResponse,
+} from "../dtos/review.dto.js";
 
-export const handleCreateReview = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    // 1. 주소창에서 storeId 추출 및 숫자로 변환
-    const storeId = parseInt(req.params.storeId as string, 10);
+@Route("stores") // 기본 API 경로 (/stores)
+@Tags("Reviews") // Swagger 문서 그룹핑
+export class ReviewController extends Controller {
+  // 1. 가게 리뷰 작성 API
+  @Post("{storeId}/reviews") // 세부 경로 (/stores/1/reviews)
+  public async handleCreateReview(
+    @Path() storeId: number,
+    @Body() body: ReviewCreateRequest,
+  ): Promise<ApiResponse<ReviewResponse>> {
+    const result = await createReview(storeId, body);
 
-    // 2. 클라이언트의 Body 데이터 변환
-    const reviewData = bodyToReview(req.body);
-
-    // 3. 서비스 로직 호출
-    const result = await createReview(storeId, reviewData);
-
-    // 4. 성공 응답
-    res.status(StatusCodes.OK).json({ result });
-  } catch (error) {
-    res
-      .status(StatusCodes.BAD_REQUEST)
-      .json({ error: (error as Error).message });
+    return success(result);
   }
-};
 
-export const handleListStoreReviews = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    // 1. 주소에서 가게 ID 뽑기
-    const storeId = parseInt(req.params.storeId as string, 10);
+  // 2. 가게 리뷰 목록 조회 API
+  @Get("{storeId}/reviews")
+  public async handleListStoreReviews(
+    @Path() storeId: number,
+    @Query() cursor?: number,
+  ): Promise<ApiResponse<ReviewListResponse>> {
+    const actualCursor = cursor || 0;
 
-    // 2. 주소 뒤의 ?cursor= 값 뽑기 (값이 없으면 0으로 시작)
-    const cursor =
-      typeof req.query.cursor === "string" ? parseInt(req.query.cursor, 10) : 0;
+    const response = await listStoreReviews(storeId, actualCursor);
 
-    // 3. 서비스 호출 및 응답
-    const reviews = await listStoreReviews(storeId, cursor);
-    res.status(200).json(reviews);
-  } catch (err) {
-    next(err);
+    return success(response);
   }
-};
+}

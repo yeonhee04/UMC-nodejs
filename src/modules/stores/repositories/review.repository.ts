@@ -1,16 +1,7 @@
 import { prisma } from "../../../db.config.js";
 import { ReviewCreateRequest } from "../dtos/review.dto.js";
 
-// 1. 가게가 실제로 존재하는지 조회하는 함수
-export const getStoreById = async (storeId: number) => {
-  const store = await prisma.store.findFirst({
-    where: { id: storeId },
-  });
-
-  return store;
-};
-
-// 2. 리뷰를 DB에 추가하는 함수
+// 1. 리뷰를 DB에 추가하는 함수
 export const addReview = async (storeId: number, data: ReviewCreateRequest) => {
   const created = await prisma.userStoreReview.create({
     data: {
@@ -24,7 +15,7 @@ export const addReview = async (storeId: number, data: ReviewCreateRequest) => {
   return created.id;
 };
 
-// 3. 특정 가게의 리뷰 목록 조회
+// 2. 특정 가게의 리뷰 목록 조회
 export const getAllStoreReviews = async (storeId: number, cursor: number) => {
   const reviews = await prisma.userStoreReview.findMany({
     select: {

@@ -1,32 +1,20 @@
-// 1. 클라이언트가 보내는 데이터 뼈대
+// 1. 미션 생성 요청 DTO
 export interface MissionCreateRequest {
   reward: number;
   deadline: string;
   missionSpec: string;
 }
 
-// 2. 요청 데이터를 시스템에 맞게 변환
-export const bodyToMission = (body: any): MissionCreateRequest => {
-  return {
-    reward: body.reward,
-    deadline: body.deadline,
-    missionSpec: body.missionSpec,
-  };
-};
+// 2. 미션 생성 응답 DTO
+export interface MissionResponse {
+  missionId: number;
+  message: string;
+}
 
-// 3. 응답 데이터 형태
-export const responseFromMission = (insertId: number) => {
-  return {
-    missionId: insertId,
-    message: "가게에 미션이 성공적으로 추가되었습니다!",
+// 3. 가게별 미션 목록 조회 응답 DTO
+export interface MissionListResponse {
+  data: any[];
+  pagination: {
+    cursor: number | null;
   };
-};
-
-export const responseFromMissions = (missions: any[]) => {
-  return {
-    data: missions,
-    pagination: {
-      cursor: missions.length > 0 ? missions[missions.length - 1].id : null,
-    },
-  };
-};
+}
