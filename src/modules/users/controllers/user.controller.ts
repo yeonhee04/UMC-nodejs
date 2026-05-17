@@ -9,6 +9,8 @@ import {
   Tags,
   Middlewares,
   Request,
+  SuccessResponse,
+  Response,
 } from "tsoa";
 import { Request as ExpressRequest } from "express";
 import { authorizeUser } from "../../../common/middlewares/auth.middleware.js";
@@ -23,7 +25,15 @@ import { ApiResponse, success } from "../../../common/responses/response.js";
 @Route("users") // 기본 API 경로
 @Tags("Users") // Swagger 문서에서 Users 그룹으로 묶어줌
 export class UserController extends Controller {
-  // 1. 회원가입 API
+
+  /**
+   * 사용자의 이메일, 비밀번호, 이름, 선호 카테고리 등을 입력받아 회원가입을 진행합니다.
+   * 성공 시 가입된 사용자의 기본 정보와 선택한 카테고리 목록을 반환합니다.
+   * @summary 사용자 회원가입 API
+   */
+  @SuccessResponse("200", "회원가입 성공") // 성공 케이스
+  @Response("400", "잘못된 요청 데이터 (필수값 누락 등)") // 실패 케이스 1
+  @Response("409", "이미 존재하는 이메일입니다. (에러코드: U001)") // 실패 케이스 2
   @Post("signup") // 세부 경로: /users/signup
   public async handleUserSignUp(
     @Body() body: UserSignUpRequest,
@@ -35,7 +45,11 @@ export class UserController extends Controller {
     return success(user);
   }
 
-  // 2. 내 리뷰 목록 조회 API
+  /**
+   * 특정 사용자가 작성한 가게 리뷰 목록을 페이징 처리하여 최신순으로 조회합니다.
+   * @summary 내 리뷰 목록 조회 API
+   */
+  @SuccessResponse("200", "리뷰 목록 조회 성공") // 성공 케이스
   @Get("{userId}/reviews") // 세부 경로: /users/1/reviews
   public async handleListUserReviews(
     @Path() userId: number,
