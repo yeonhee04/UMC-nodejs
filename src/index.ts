@@ -7,6 +7,10 @@ import cookieParser from "cookie-parser";
 import { RegisterRoutes } from "./generated/routes.js";
 import { AppError } from "./common/errors/app.error.js";
 
+import swaggerUi from "swagger-ui-express";
+import fs from "fs";
+import path from "path";
+
 dotenv.config();
 
 const app: Express = express();
@@ -15,15 +19,30 @@ const port = process.env.PORT || 3000;
 app.use(morgan("dev"));
 app.use(cookieParser());
 
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:3000", "http://127.0.0.1:5500"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], 
+  })
+);
+
 app.use(express.static("public"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// 서버가 잘 켜졌는지 확인하는 기본 화면
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello World! This is TypeScript Server!");
 });
+
+const swaggerFilePath = path.resolve("dist/swagger.json");
+if (fs.existsSync(swaggerFilePath)) {
+  const swaggerFile = JSON.parse(fs.readFileSync(swaggerFilePath, "utf8"));
+  
+  app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerFile));
+} else {
+  console.log("swagger.json 파일이 아직 생성되지 않았습니다.");
+}
 
 const router = express.Router();
 RegisterRoutes(router);
