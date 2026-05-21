@@ -11,6 +11,7 @@ import {
   Request,
   SuccessResponse,
   Response,
+  Patch,
 } from "tsoa";
 import { Request as ExpressRequest } from "express";
 import { authorizeUser } from "../../../common/middlewares/auth.middleware.js";
@@ -18,17 +19,19 @@ import {
   UserSignUpRequest,
   UserSignUpResponse,
   UserReviewsResponse,
+  UserUpdateRequest
 } from "../dtos/user.dto.js";
-import { listUserReviews, userSignUp } from "../services/user.service.js";
+import { listUserReviews, userSignUp, updateUserInfo } from "../services/user.service.js";
 import { ApiResponse, success } from "../../../common/responses/response.js";
+import passport from "passport";
+
+const isLogin = passport.authenticate("jwt", { session: false });
 
 @Route("users") // 기본 API 경로
 @Tags("Users") // Swagger 문서에서 Users 그룹으로 묶어줌
 export class UserController extends Controller {
 
   /**
-   * 사용자의 이메일, 비밀번호, 이름, 선호 카테고리 등을 입력받아 회원가입을 진행합니다.
-   * 성공 시 가입된 사용자의 기본 정보와 선택한 카테고리 목록을 반환합니다.
    * @summary 사용자 회원가입 API
    */
   @SuccessResponse("200", "회원가입 성공") // 성공 케이스
@@ -46,17 +49,32 @@ export class UserController extends Controller {
   }
 
   /**
-   * 특정 사용자가 작성한 가게 리뷰 목록을 페이징 처리하여 최신순으로 조회합니다.
+   * @summary 내 정보 수정 API
+   */
+  @SuccessResponse("200", "정보 수정 성공")
+  @Patch("me")
+  @Middlewares(isLogin) 
+  public async handleUpdateMe(
+    @Request() req: any,
+    @Body() body: UserUpdateRequest
+  ): Promise<ApiResponse<any>> {
+    const result = await updateUserInfo(req.user.id, body);
+    return success(result);
+  }
+
+  /**
    * @summary 내 리뷰 목록 조회 API
    */
   @SuccessResponse("200", "리뷰 목록 조회 성공") // 성공 케이스
-  @Get("{userId}/reviews") // 세부 경로: /users/1/reviews
+  @Get("me/reviews") // 세부 경로: /users/1/reviews
+  @Middlewares(isLogin) 
   public async handleListUserReviews(
-    @Path() userId: number,
+    @Request() req: any,
     @Query() cursor?: number,
   ): Promise<ApiResponse<UserReviewsResponse>> {
     const actualCursor = cursor || 0;
-
+    
+    const userId = req.user.id;
     const response = await listUserReviews(userId, actualCursor);
     return success(response);
   }
@@ -115,4 +133,6 @@ export class UserController extends Controller {
       '로그아웃 완료 (쿠키 삭제). <a href="/api/v1/users/guest">메인으로</a>',
     );
   }
+
 }
+

@@ -12,6 +12,7 @@ import {
   setPreference,
 } from "../repositories/user.repository.js";
 import { DuplicateUserEmailError } from "../../../common/errors/error.js";
+import { prisma } from "../../../db.config.js";
 
 // 1. 회원가입 서비스 함수
 export const userSignUp = async (
@@ -65,4 +66,24 @@ export const listUserReviews = async (
       cursor: reviews.length > 0 ? reviews[reviews.length - 1]!.id : null,
     },
   };
+};
+
+// 3. 회원 정보 수정 서비스 함수
+export const updateUserInfo = async (userId: number, body: any) => {
+  return await prisma.user.update({
+    where: { id: userId },
+    data: {
+      name: body.name,
+      gender: body.gender,
+      birth: body.birth ? new Date(body.birth) : undefined,
+      address: body.address,
+      detailAddress: body.detailAddress,
+      phoneNumber: body.phoneNumber,
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+    }
+  });
 };
