@@ -25,3 +25,13 @@ export interface UserReviewsResponse {
     cursor: number | null;
   };
 }
+
+// 4. 회원 정보 수정 요청 DTO
+export interface UserUpdateRequest {
+  name?: string;
+  gender?: string;
+  birth?: string;
+  address?: string;
+  detailAddress?: string;
+  phoneNumber?: string;
+}
