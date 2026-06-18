@@ -40,6 +40,7 @@ jobs:
           mkdir -p artifact
           cp -r dist artifact/dist
           cp -r node_modules artifact/node_modules
+          cp -r src artifact/src
           cp package.json package-lock.json prisma.config.ts artifact/
           if [ -d prisma ]; then cp -r prisma artifact/prisma; fi
           tar -czf artifact.tgz -C artifact .
@@ -91,7 +92,7 @@ jobs:
           rsync -az --delete --ignore-missing-args \
             --exclude ".git" \
             --exclude ".env" \
-            ./dist ./prisma ./node_modules ./package.json ./package-lock.json ./prisma.config.ts \
+            ./dist ./prisma ./node_modules ./package.json ./package-lock.json ./prisma.config.ts ./src \
             target:/opt/app/umc10th/incoming/
 
       - name: Switch Environment
