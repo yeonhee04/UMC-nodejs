@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE `store` ADD COLUMN `address` VARCHAR(255) NOT NULL DEFAULT '주소 없음',
+    ADD COLUMN `food_category_id` INTEGER NOT NULL DEFAULT 1,
+    ADD COLUMN `region_id` INTEGER NOT NULL DEFAULT 1;
